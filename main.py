@@ -42,29 +42,32 @@ def count_clicks(token, bitlink):
     return response.json().get("total_clicks")
 
 
+def get_action_and_message(is_link):
+    return (count_clicks,
+            "Количество кликов по вашей ссылке: {}") if is_link else (
+                shorten_link, "Сокращенная ссылка: {}")
+
+
 def main():
     parser = argparse.ArgumentParser(description='bit.ly link.')
-    parser.add_argument('url', help='the url shorten or expand')
+    parser.add_argument('url', help='the url to shorten or expand')
     args = parser.parse_args()
 
     load_dotenv()
     bitly_token = os.environ['BITLY_TOKEN']
     user_input_url = args.url
 
-    actions = {
-        True: (count_clicks, "Количество кликов по вашей ссылке: {}"),
-        False: (shorten_link, "Сокращенная ссылка: {}")
-    }
-
     try:
         parsed_url = urlparse(user_input_url)
         formatted_url = f"{parsed_url.netloc}{parsed_url.path}"
-        is_link = is_bitlink(bitly_token, formatted_url)
-        func, message = actions[is_link]
+        func, message = get_action_and_message(
+            is_bitlink(
+                bitly_token,
+                formatted_url
+                ))
         result = func(bitly_token, user_input_url)
         print(message.format(
-            result if result is not None else "Ошибка при получении данных"
-        ))
+            result if result is not None else "Ошибка при получении данных"))
     except requests.exceptions.HTTPError as e:
         print(f"Произошла ошибка при выполнении запроса: {e}")
 
